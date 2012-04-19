@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var fs = require('fs');
+var qs = require('querystring');
 var exec = require('child_process').exec;
 var _ = require('underscore');
 var request = require('request');
@@ -66,8 +67,6 @@ async.waterfall([
           { uri: baseurl + 'devices',
             headers: headers
           }, function(err, res, body) {
-            //var inputs = _.map(JSON.parse(body), function(item) { return item.id });
-            //var devices = _.reduce(JSON.parse(body), function
             var devices = {};
             _.each(JSON.parse(body), function(device) {
                 devices[device.ip] = device.id;
@@ -76,9 +75,8 @@ async.waterfall([
         });
     },
     function(ip, inputs, devices, cb) {
-        var op = options.op == 'start' ? 'adddevice' : 'removedevice';
         // Add device to each input
-        if (op == 'start') {
+        if (options.op == 'start') {
             _.each(inputs, function(input) {
                 headers['Content-Type'] = 'application/x-www-form-urlencoded';
                 request(
@@ -91,7 +89,7 @@ async.waterfall([
                     }
                 );
             });
-        } else if (op == 'stop') {
+        } else if (options.op == 'stop') {
             // Deletes device from all inputs
             request(
                 { uri: baseurl + 'devices/' + devices[ip],
