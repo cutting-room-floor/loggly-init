@@ -1,0 +1,5 @@
+{
+    "domain": "YOUR-LOGGLY-SUBDOMAIN",
+    "username": "YOUR-LOGGLY-USERNAME",
+    "password": "YOUR-LOGGLY-PASSWORD",
+}
