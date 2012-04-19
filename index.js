@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var fs = require('fs');
+var exec = require('child_process').exec;
 var _ = require('underscore');
 var request = require('request');
 var async = require('async');
@@ -42,25 +43,64 @@ var headers = {};
 headers['authorization'] = 'Basic ' + new Buffer(options.username + ':' + options.password).toString('base64');
 
 async.waterfall([
+    // Get IP of this machine
     function(cb) {
+        exec(options.ipcmd,
+          function (err, stdout, stderr) {
+              cb(null, stdout.replace('\n', ''));
+          }
+    )},
+    // Get id's of all inputs
+    function(ip, cb) {
         request(
           { uri: baseurl + 'inputs',
             headers: headers
           }, function(err, res, body) {
             var inputs = _.map(JSON.parse(body), function(item) { return item.id });
-            cb(null, inputs); 
+            cb(null, ip, inputs); 
         });
     },
-    function(inputs, cb) {
-        var endpoint = options.op == 'start' ? 'adddevice' : 'removedevice';
-        _.each(inputs, function(input) {
-            request(
-                { uri: baseurl + 'inputs/' + input + '/' + endpoint,
-                  headers: headers,
-                  method: 'POST'
-                }, function(err, res, body) {
-                    // 
-                });
+    // Build map of devices
+    function(ip, inputs, cb) {
+        request(
+          { uri: baseurl + 'devices',
+            headers: headers
+          }, function(err, res, body) {
+            //var inputs = _.map(JSON.parse(body), function(item) { return item.id });
+            //var devices = _.reduce(JSON.parse(body), function
+            var devices = {};
+            _.each(JSON.parse(body), function(device) {
+                devices[device.ip] = device.id;
+            });
+            cb(null, ip, inputs, devices); 
         });
+    },
+    function(ip, inputs, devices, cb) {
+        var op = options.op == 'start' ? 'adddevice' : 'removedevice';
+        // Add device to each input
+        if (op == 'start') {
+            _.each(inputs, function(input) {
+                headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                request(
+                    { uri: baseurl + 'devices',
+                      headers: headers,
+                      method: 'POST',
+                      body: qs.stringify({ 'input_id': input, 'ip': ip }).replace('"', '')
+                    }, function(err, res, body) {
+                        // 
+                    }
+                );
+            });
+        } else if (op == 'stop') {
+            // Deletes device from all inputs
+            request(
+                { uri: baseurl + 'devices/' + devices[ip],
+                  headers: headers,
+                  method: 'DELETE',
+                }, function(err, res, body) {
+                        // 
+                }
+            );
+        }
     }
 ]);
