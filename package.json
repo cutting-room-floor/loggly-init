@@ -1,10 +1,21 @@
 {
   "name": "loggly-init",
+  "description": "Register devices with Loggly",
   "version": "0.0.0",
+  "repository": {
+      "type": "git",
+      "url": "git://github.com/mapbox/loggly-init.git"
+  },
+  "main": "index.js",
+  "bin": "./bin/loggly-init",
+  "engines": {
+    "node": "0.4 || 0.6 || 0.8"
+  },
   "dependencies": {
     "optimist": "0.2.x",
     "underscore": "1.3.x",
     "async": "0.1.x",
     "request": "2.9.x"
-  }
+  },
+  "devDependencies": {}
 }
